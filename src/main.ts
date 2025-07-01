@@ -31,7 +31,7 @@ const DEFAULT_SETTINGS: AiAssistantSettings = {
 	mySetting: "default",
 	openAIapiKey: "",
 	anthropicApiKey: "",
-	modelName: "gpt-4o",
+	modelName: "gpt-4.1",
 	imageModelName: "dall-e-3",
 	fileNameWithSystemPromptForAI: "System Prompt for AI.md",
 	maxTokens: 500,
@@ -378,6 +378,8 @@ class AiAssistantSettingTab extends PluginSettingTab {
 			.addDropdown((dropdown) =>
 				dropdown
 					.addOptions({
+						"gpt-4.1": "gpt-4.1",
+						"gpt-4.1-mini": "gpt-4.1-mini",
 						"gpt-4o": "gpt-4o",
 						"gpt-4o-mini": "gpt-4o-mini",	
 						"gpt-4": "gpt-4",
