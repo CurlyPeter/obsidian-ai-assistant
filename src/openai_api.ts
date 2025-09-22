@@ -21,9 +21,20 @@ export class OpenAIAssistant {
 
 	display_error = (err: any) => {
 		if (err instanceof OpenAI.APIError) {
-			new Notice(`## OpenAI API Error: ${err}.`);
+			console.error("OpenAI API Error Details:", {
+				status: err.status,
+				message: err.message,
+				type: err.type,
+				code: err.code,
+				param: err.param,
+				error: err.error,
+				headers: err.headers,
+				request_id: err.request_id
+			});
+			new Notice(`## OpenAI API Error (${err.status}): ${err.message}. Check console for full details.`);
 		} else {
-			new Notice(err);
+			console.error("OpenAI Error:", err);
+			new Notice(`Error: ${err}`);
 		}
 	};
 
@@ -38,17 +49,48 @@ export class OpenAIAssistant {
 		let model = this.modelName;
 		console.log (prompt_list);
 		console.log ("temperature: " + temperature);
+
+		// GPT-5 models only support temperature = 1
+		if (this.modelName.startsWith("gpt-5")) {
+			temperature = 1;
+			console.log ("GPT-5 model detected, forcing temperature to 1");
+		}
+
 		if (has_img) {
-			model = "gpt-4-vision-preview";
+			// Use GPT-5 for vision tasks if available, otherwise fallback to gpt-4-vision-preview
+			if (this.modelName.startsWith("gpt-5")) {
+				model = this.modelName; // GPT-5 has native multimodal support
+			} else {
+				model = "gpt-4-vision-preview";
+			}
 		}
 		try {
-			const response = await this.apiFun.chat.completions.create({
+			const apiParams: any = {
 				messages: prompt_list,
 				model: model,
-				max_tokens: this.maxTokens,
 				stream: streamMode,
 				temperature: temperature,
+			};
+
+			// GPT-5 models use max_completion_tokens instead of max_tokens
+			if (this.modelName.startsWith("gpt-5")) {
+				apiParams.max_completion_tokens = this.maxTokens;
+			} else {
+				apiParams.max_tokens = this.maxTokens;
+			}
+
+			console.log("OpenAI API Request Parameters:", {
+				model: apiParams.model,
+				max_tokens: apiParams.max_tokens,
+				max_completion_tokens: apiParams.max_completion_tokens,
+				stream: apiParams.stream,
+				temperature: apiParams.temperature,
+				messages_count: apiParams.messages.length,
+				first_message_role: apiParams.messages[0]?.role,
+				has_images: has_img
 			});
+
+			const response = await this.apiFun.chat.completions.create(apiParams);
 
 			if (streamMode) {
 				let responseText = "";
